@@ -9,11 +9,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.UUID;
 
 import static com.taskflow.service.impl.AuthServiceImpl.mapUserResponse;
 
@@ -55,11 +53,14 @@ public class ProfileService {
             currentUser.setFullName(request.fullName().trim());
         }
 
+        if (request.gender() != null) {
+            currentUser.setGender(request.gender());
+        }
+
         // save profile photo as URL directly
         if (request.profilePhoto() != null) {
             String photoUrl = request.profilePhoto().trim();
 
-            // allow clearing photo
             if (photoUrl.isEmpty()) {
                 currentUser.setProfilePhoto(null);
             } else {
@@ -68,23 +69,6 @@ public class ProfileService {
             }
         }
 
-        currentUser = userRepository.save(currentUser);
-        return mapUserResponse(currentUser);
-    }
-
-    @Transactional
-    public UserResponse uploadProfilePhoto(MultipartFile file, User currentUser) {
-        if (file.isEmpty()) {
-            throw new BadRequestException("File must not be empty");
-        }
-        if (file.getSize() > 5 * 1024 * 1024) {
-            throw new BadRequestException("Photo exceeds 5 MB limit");
-        }
-
-        // If you still want to keep upload endpoint, this stores a generated path.
-        // In production, upload to S3/Cloudinary and store the final public URL.
-        String photoUrl = "/uploads/profile/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
-        currentUser.setProfilePhoto(photoUrl);
         currentUser = userRepository.save(currentUser);
         return mapUserResponse(currentUser);
     }

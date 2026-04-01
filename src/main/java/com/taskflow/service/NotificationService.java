@@ -34,6 +34,23 @@ public class NotificationService {
         notificationRepository.save(notification);
     }
 
+//    create notification
+public void createNotification(User receiver,
+                               NotificationType type,
+                               String message,
+                               UUID referenceId) {
+
+    Notification notification = Notification.builder()
+            .recipient(receiver)
+            .type(type)
+            .message(message)
+            .referenceId(referenceId)
+            .isRead(false)
+            .build();
+
+    notificationRepository.save(notification);
+}
+
     public PageResponse<NotificationResponse> getMyNotifications(User user, int page, int size) {
         Page<Notification> result = notificationRepository
                 .findByRecipientOrderByCreatedAtDesc(user, PageRequest.of(page, size));

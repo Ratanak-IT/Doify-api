@@ -10,10 +10,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -27,7 +25,6 @@ public class TaskController {
 
     private final TaskService taskService;
 
-    // ─── Personal Tasks ──────────────────────────────────────────────────────
 
     @PostMapping("/personal")
     @ResponseStatus(HttpStatus.CREATED)
@@ -52,7 +49,6 @@ public class TaskController {
         return taskService.getPersonalTasks(currentUser, search, status, priority, page, size);
     }
 
-    // ─── Project Tasks ───────────────────────────────────────────────────────
 
     @PostMapping("/project/{projectId}")
     @ResponseStatus(HttpStatus.CREATED)
@@ -80,7 +76,6 @@ public class TaskController {
         return taskService.getProjectTasks(projectId, currentUser, search, status, priority, assigneeId, page, size);
     }
 
-    // ─── Common Task Operations ───────────────────────────────────────────────
 
     @GetMapping("/{taskId}")
     @Operation(summary = "Get a task by ID")
@@ -120,17 +115,16 @@ public class TaskController {
         return taskService.getSubtasks(taskId, currentUser);
     }
 
-    // ─── Attachments ─────────────────────────────────────────────────────────
 
-    @PostMapping(value = "/{taskId}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping("/{taskId}/attachments")
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Upload a file attachment to a task")
+    @Operation(summary = "Attach an existing file URL to a task")
     public AttachmentResponse addAttachment(
             @PathVariable UUID taskId,
-            @RequestParam("file") MultipartFile file,
+            @Valid @RequestBody AddAttachmentByUrlRequest request,
             @AuthenticationPrincipal User currentUser
     ) {
-        return taskService.addAttachment(taskId, file, currentUser);
+        return taskService.addAttachment(taskId, request, currentUser);
     }
 
     @DeleteMapping("/{taskId}/attachments/{attachmentId}")

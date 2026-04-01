@@ -1,5 +1,6 @@
 package com.taskflow.dto.request;
 
+import com.taskflow.domain.enums.Gender;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -17,7 +18,9 @@ public class ProfileRequests {
             @Email(message = "Email must be valid")
             String email,
 
-            String profilePhoto
+            String profilePhoto,
+
+            Gender gender
     ) {}
 
     public record ChangePasswordRequest(

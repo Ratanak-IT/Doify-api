@@ -1,5 +1,6 @@
 package com.taskflow.domain;
 
+import com.taskflow.domain.enums.Gender;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -19,11 +20,14 @@ import java.util.*;
 public class User implements UserDetails {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private UUID id;
 
     @Column(nullable = false, length = 100)
     private String fullName;
+
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
 
     @Column(unique = true, nullable = false, length = 50)
     private String username;

@@ -23,6 +23,7 @@ public class Responses {
             String username,
             String email,
             String profilePhoto,
+            Gender gender,
             boolean isVerified,
             Instant createdAt
     ) {}

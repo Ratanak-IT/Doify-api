@@ -57,6 +57,7 @@ public class AuthServiceImpl implements AuthService {
                 .username(request.username())
                 .email(request.email())
                 .password(passwordEncoder.encode(request.password()))
+                .gender(request.gender())
                 .emailVerificationToken(verificationToken)
                 .isVerified(false)
                 .build();
@@ -213,6 +214,7 @@ public class AuthServiceImpl implements AuthService {
                 user.getProfileUsername(),
                 user.getEmail(),
                 user.getProfilePhoto(),
+                user.getGender(),
                 user.isVerified(),
                 user.getCreatedAt()
         );

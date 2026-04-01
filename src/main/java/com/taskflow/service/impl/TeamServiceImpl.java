@@ -125,6 +125,16 @@ public class TeamServiceImpl implements TeamService {
                 .build();
         invitationRepository.save(invitation);
 
+        // ✅ ADD THIS BLOCK
+        userRepository.findByEmail(request.email()).ifPresent(invitedUser -> {
+            notificationService.createNotification(
+                    invitedUser,
+                    NotificationType.TEAM_INVITATION,
+                    currentUser.getFullName() + " invited you to join team " + team.getName(),
+                    invitation.getId()
+            );
+        });
+
         emailService.sendTeamInvitationEmail(
                 request.email(),
                 currentUser.getFullName(),

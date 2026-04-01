@@ -18,7 +18,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -103,8 +102,8 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public PageResponse<TaskResponse> getProjectTasks(UUID projectId, User currentUser, String search,
-                                                       String status, String priority, UUID assigneeId,
-                                                       int page, int size) {
+                                                      String status, String priority, UUID assigneeId,
+                                                      int page, int size) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
@@ -186,20 +185,19 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional
-    public AttachmentResponse addAttachment(UUID taskId, MultipartFile file, User currentUser) {
+    public AttachmentResponse addAttachment(UUID taskId, AddAttachmentByUrlRequest request, User currentUser) {
         Task task = findTaskAndVerifyAccess(taskId, currentUser);
 
-        if (file.isEmpty()) throw new BadRequestException("File must not be empty");
-        if (file.getSize() > 10 * 1024 * 1024) throw new BadRequestException("File exceeds 10 MB limit");
-
-        // In production, upload to S3 here. For now, store filename as URL.
-        String fileUrl = "/uploads/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
+        String fileUrl = normalizeHttpUrl(request.fileUrl());
+        String fileName = resolveFileName(request.fileName(), fileUrl);
+        String contentType = resolveContentType(request.contentType());
+        long fileSize = request.fileSize() != null ? request.fileSize() : 0L;
 
         Attachment attachment = Attachment.builder()
-                .fileName(file.getOriginalFilename())
+                .fileName(fileName)
                 .fileUrl(fileUrl)
-                .contentType(file.getContentType())
-                .fileSize(file.getSize())
+                .contentType(contentType)
+                .fileSize(fileSize)
                 .task(task)
                 .uploader(currentUser)
                 .build();
@@ -321,6 +319,45 @@ public class TaskServiceImpl implements TaskService {
                 mapUserResponse(a.getUploader()),
                 a.getUploadedAt()
         );
+    }
+
+    private String normalizeHttpUrl(String rawUrl) {
+        try {
+            java.net.URI uri = new java.net.URI(rawUrl.trim());
+            String scheme = uri.getScheme();
+            if (scheme == null || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))) {
+                throw new BadRequestException("File URL must be a valid http or https URL");
+            }
+            if (uri.getHost() == null || uri.getHost().isBlank()) {
+                throw new BadRequestException("File URL must be a valid URL");
+            }
+            return uri.toString();
+        } catch (java.net.URISyntaxException e) {
+            throw new BadRequestException("File URL must be a valid URL");
+        }
+    }
+
+    private String resolveFileName(String providedFileName, String fileUrl) {
+        if (providedFileName != null && !providedFileName.isBlank()) {
+            return providedFileName.trim();
+        }
+
+        String path = java.net.URI.create(fileUrl).getPath();
+        if (path != null && !path.isBlank()) {
+            String candidate = path.substring(path.lastIndexOf('/') + 1).trim();
+            if (!candidate.isBlank()) {
+                return candidate.length() > 255 ? candidate.substring(0, 255) : candidate;
+            }
+        }
+
+        return "attachment";
+    }
+
+    private String resolveContentType(String providedContentType) {
+        if (providedContentType == null || providedContentType.isBlank()) {
+            return "application/octet-stream";
+        }
+        return providedContentType.trim();
     }
 
     private <T extends Enum<T>> T parseEnum(Class<T> cls, String value) {
