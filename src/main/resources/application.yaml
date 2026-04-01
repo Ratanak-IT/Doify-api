@@ -6,9 +6,9 @@ spring:
     name: taskflow-api
 
   datasource:
-    url: jdbc:postgresql://localhost:1681/task_db
-    username: postgres
-    password: "0116"
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_USERNAME}
     driver-class-name: org.postgresql.Driver
 
   jpa:

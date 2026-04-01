@@ -3,6 +3,7 @@ package com.taskflow.domain;
 import com.taskflow.domain.enums.Gender;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.UuidGenerator;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,7 +21,8 @@ import java.util.*;
 public class User implements UserDetails {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue
+    @UuidGenerator
     private UUID id;
 
     @Column(nullable = false, length = 100)
