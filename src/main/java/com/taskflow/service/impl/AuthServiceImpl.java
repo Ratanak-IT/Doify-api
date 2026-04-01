@@ -210,7 +210,7 @@ public class AuthServiceImpl implements AuthService {
         return new UserResponse(
                 user.getId(),
                 user.getFullName(),
-                user.getUsername(),
+                user.getProfileUsername(),
                 user.getEmail(),
                 user.getProfilePhoto(),
                 user.isVerified(),
