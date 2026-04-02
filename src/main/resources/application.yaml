@@ -29,8 +29,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ratanakcoding.it@gmail.com
-    password: "pgtybbmknkhrylwl"
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -48,6 +48,8 @@ app:
     secret: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
     access-token-expiration-minutes: 120
     refresh-token-expiration-days: 30
+  email:
+    login-notification-enabled: true
 
   frontend-url: http://localhost:3000
   file-storage-path: uploads
