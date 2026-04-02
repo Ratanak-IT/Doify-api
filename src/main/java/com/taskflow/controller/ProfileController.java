@@ -2,7 +2,7 @@ package com.taskflow.controller;
 
 import com.taskflow.domain.User;
 import com.taskflow.dto.request.ProfileRequests.*;
-import com.taskflow.dto.response.ApiSuccessResponse;
+import com.taskflow.dto.response.ApiResponse;
 import com.taskflow.dto.response.Responses.UserResponse;
 import com.taskflow.service.ProfileService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,8 +24,8 @@ public class ProfileController {
 
     @GetMapping
     @Operation(summary = "Get current user profile")
-    public ApiSuccessResponse<UserResponse> getProfile(@AuthenticationPrincipal User currentUser) {
-        return ApiSuccessResponse.ok(
+    public ApiResponse<UserResponse> getProfile(@AuthenticationPrincipal User currentUser) {
+        return ApiResponse.success(
                 "Profile fetched successfully",
                 profileService.getProfile(currentUser)
         );
@@ -34,11 +33,11 @@ public class ProfileController {
 
     @PutMapping
     @Operation(summary = "Update profile (name, username, email, profile photo URL)")
-    public ApiSuccessResponse<UserResponse> updateProfile(
+    public ApiResponse<UserResponse> updateProfile(
             @Valid @RequestBody UpdateProfileRequest request,
             @AuthenticationPrincipal User currentUser
     ) {
-        return ApiSuccessResponse.ok(
+        return ApiResponse.success(
                 "Profile updated successfully",
                 profileService.updateProfile(request, currentUser)
         );
@@ -46,11 +45,11 @@ public class ProfileController {
 
     @PatchMapping("/password")
     @Operation(summary = "Change password")
-    public ApiSuccessResponse<Void> changePassword(
+    public ApiResponse<Void> changePassword(
             @Valid @RequestBody ChangePasswordRequest request,
             @AuthenticationPrincipal User currentUser
     ) {
         profileService.changePassword(request, currentUser);
-        return ApiSuccessResponse.ok("Password changed successfully");
+        return ApiResponse.success("Password changed successfully", null);
     }
 }

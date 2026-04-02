@@ -1,22 +1,42 @@
 package com.taskflow.dto.response;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.Instant;
 
-public record ApiResponse<T>(
-        boolean success,
-        String message,
-        T data,
-        Instant timestamp
-) {
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class ApiResponse<T> {
+
+    private boolean success;
+    private String message;
+    private T data;
+    private Instant timestamp;
+
     public static <T> ApiResponse<T> success(String message, T data) {
-        return new ApiResponse<>(true, message, data, Instant.now());
+        return ApiResponse.<T>builder()
+                .success(true)
+                .message(message)
+                .data(data)
+                .timestamp(Instant.now())
+                .build();
     }
 
     public static <T> ApiResponse<T> success(String message) {
-        return new ApiResponse<>(true, message, null, Instant.now());
+        return success(message, null);
     }
 
     public static <T> ApiResponse<T> error(String message) {
-        return new ApiResponse<>(false, message, null, Instant.now());
+        return ApiResponse.<T>builder()
+                .success(false)
+                .message(message)
+                .data(null)
+                .timestamp(Instant.now())
+                .build();
     }
 }

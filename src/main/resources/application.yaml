@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 spring:
   application:
@@ -8,7 +8,7 @@ spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -29,8 +29,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
+    username: ratanakcoding.it@gmail.com
+    password: "pgtybbmknkhrylwl"
     properties:
       mail:
         smtp:
@@ -48,8 +48,6 @@ app:
     secret: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
     access-token-expiration-minutes: 120
     refresh-token-expiration-days: 30
-  email:
-    login-notification-enabled: true
 
   frontend-url: http://localhost:3000
   file-storage-path: uploads

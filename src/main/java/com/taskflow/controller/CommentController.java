@@ -2,6 +2,7 @@ package com.taskflow.controller;
 
 import com.taskflow.domain.User;
 import com.taskflow.dto.request.CommentRequest.*;
+import com.taskflow.dto.response.ApiSuccessResponse;
 import com.taskflow.dto.response.Responses.*;
 import com.taskflow.service.CommentService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,44 +28,54 @@ public class CommentController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Add a comment to a task. Use @username to mention teammates.")
-    public CommentResponse addComment(
+    public ApiSuccessResponse<CommentResponse> addComment(
             @PathVariable UUID taskId,
             @Valid @RequestBody CreateCommentRequest request,
             @AuthenticationPrincipal User currentUser
     ) {
-        return commentService.addComment(taskId, request, currentUser);
+        return ApiSuccessResponse.of(
+                HttpStatus.CREATED,
+                "Comment added successfully",
+                commentService.addComment(taskId, request, currentUser)
+        );
     }
 
     @GetMapping
     @Operation(summary = "Get all comments for a task")
-    public PageResponse<CommentResponse> getComments(
+    public ApiSuccessResponse<PageResponse<CommentResponse>> getComments(
             @PathVariable UUID taskId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @AuthenticationPrincipal User currentUser
     ) {
-        return commentService.getComments(taskId, currentUser, page, size);
+        return ApiSuccessResponse.ok(
+                "Comments fetched successfully",
+                commentService.getComments(taskId, currentUser, page, size)
+        );
     }
 
     @PutMapping("/{commentId}")
     @Operation(summary = "Update a comment (author only)")
-    public CommentResponse updateComment(
+    public ApiSuccessResponse<CommentResponse> updateComment(
             @PathVariable UUID taskId,
             @PathVariable UUID commentId,
             @Valid @RequestBody UpdateCommentRequest request,
             @AuthenticationPrincipal User currentUser
     ) {
-        return commentService.updateComment(taskId, commentId, request, currentUser);
+        return ApiSuccessResponse.ok(
+                "Comment updated successfully",
+                commentService.updateComment(taskId, commentId, request, currentUser)
+        );
     }
 
     @DeleteMapping("/{commentId}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Delete a comment (author only)")
-    public void deleteComment(
+    public ApiSuccessResponse<Void> deleteComment(
             @PathVariable UUID taskId,
             @PathVariable UUID commentId,
             @AuthenticationPrincipal User currentUser
     ) {
         commentService.deleteComment(taskId, commentId, currentUser);
+        return ApiSuccessResponse.ok("Comment deleted successfully");
     }
 }
