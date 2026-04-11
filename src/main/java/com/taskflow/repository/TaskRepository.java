@@ -65,7 +65,8 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
             Pageable pageable
     );
 
-    // Dashboard queries
+    // ── Dashboard queries ────────────────────────────────────────────────────
+
     long countByCreatorAndProjectIsNull(User creator);
 
     long countByAssignee(User assignee);
@@ -74,12 +75,25 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
 
     long countByAssigneeAndDueDateBefore(User assignee, LocalDate date);
 
+    /**
+     * Upcoming due dates — ALL tasks visible to the user:
+     *   1. Personal tasks (creator = user, no project)
+     *   2. Project tasks assigned to user
+     *   3. Any task in a project whose team the user is a member of
+     */
     @Query("""
-            SELECT t FROM Task t
-            WHERE t.assignee = :user
-              AND t.dueDate >= :from
+            SELECT DISTINCT t FROM Task t
+            LEFT JOIN t.project p
+            LEFT JOIN p.team team
+            LEFT JOIN team.members tm
+            WHERE t.dueDate >= :from
               AND t.dueDate <= :to
               AND t.status != :excludeStatus
+              AND (
+                (t.creator = :user AND t.project IS NULL)
+                OR t.assignee = :user
+                OR tm.user = :user
+              )
             ORDER BY t.dueDate ASC
             """)
     List<Task> findUpcomingTasks(
@@ -89,13 +103,84 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
             @Param("excludeStatus") TaskStatus excludeStatus
     );
 
+    /**
+     * Overdue tasks — ALL tasks visible to the user:
+     *   1. Personal tasks (creator = user, no project)
+     *   2. Project tasks assigned to user
+     *   3. Any task in a project whose team the user is a member of
+     */
     @Query("""
-            SELECT t FROM Task t
-            WHERE t.assignee = :user
-              AND t.dueDate < :today
+            SELECT DISTINCT t FROM Task t
+            LEFT JOIN t.project p
+            LEFT JOIN p.team team
+            LEFT JOIN team.members tm
+            WHERE t.dueDate < :today
               AND t.status NOT IN :excludeStatuses
+              AND (
+                (t.creator = :user AND t.project IS NULL)
+                OR t.assignee = :user
+                OR tm.user = :user
+              )
             """)
     List<Task> findOverdueTasks(
+            @Param("user") User user,
+            @Param("today") LocalDate today,
+            @Param("excludeStatuses") List<TaskStatus> excludeStatuses
+    );
+
+    /**
+     * Total count of ALL tasks visible to the user (personal + project + team)
+     */
+    @Query("""
+            SELECT COUNT(DISTINCT t) FROM Task t
+            LEFT JOIN t.project p
+            LEFT JOIN p.team team
+            LEFT JOIN team.members tm
+            WHERE (
+              (t.creator = :user AND t.project IS NULL)
+              OR t.assignee = :user
+              OR tm.user = :user
+            )
+            """)
+    long countAllVisibleTasks(@Param("user") User user);
+
+    /**
+     * Count ALL visible tasks by status (completed, pending, etc.)
+     */
+    @Query("""
+            SELECT COUNT(DISTINCT t) FROM Task t
+            LEFT JOIN t.project p
+            LEFT JOIN p.team team
+            LEFT JOIN team.members tm
+            WHERE t.status = :status
+              AND (
+                (t.creator = :user AND t.project IS NULL)
+                OR t.assignee = :user
+                OR tm.user = :user
+              )
+            """)
+    long countAllVisibleTasksByStatus(
+            @Param("user") User user,
+            @Param("status") TaskStatus status
+    );
+
+    /**
+     * Count ALL visible overdue tasks
+     */
+    @Query("""
+            SELECT COUNT(DISTINCT t) FROM Task t
+            LEFT JOIN t.project p
+            LEFT JOIN p.team team
+            LEFT JOIN team.members tm
+            WHERE t.dueDate < :today
+              AND t.status NOT IN :excludeStatuses
+              AND (
+                (t.creator = :user AND t.project IS NULL)
+                OR t.assignee = :user
+                OR tm.user = :user
+              )
+            """)
+    long countAllVisibleOverdueTasks(
             @Param("user") User user,
             @Param("today") LocalDate today,
             @Param("excludeStatuses") List<TaskStatus> excludeStatuses

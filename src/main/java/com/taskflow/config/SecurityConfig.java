@@ -1,5 +1,7 @@
 package com.taskflow.config;
 
+import com.taskflow.security.JwtAccessDeniedHandler;
+import com.taskflow.security.JwtAuthenticationEntryPoint;
 import com.taskflow.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -28,6 +30,8 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
+    private final JwtAuthenticationEntryPoint authenticationEntryPoint;
+    private final JwtAccessDeniedHandler accessDeniedHandler;
 
     private static final String[] PUBLIC_URLS = {
             "/api/v1/auth/**",
@@ -47,6 +51,10 @@ public class SecurityConfig {
                 )
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(authenticationEntryPoint)   // 401
+                        .accessDeniedHandler(accessDeniedHandler)              // 403
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

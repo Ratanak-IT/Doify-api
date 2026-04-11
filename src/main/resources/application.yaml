@@ -45,7 +45,7 @@ spring:
 
 app:
   jwt:
-    secret: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    secret: XhHN4zPEEsjDgx1R9NYQJ7e3wRaSSgpOqTQ8fSwYJM5Jma2NwjjppxIc5jy0cdGrqcW779J0JDA4lTe4v7Df7w==
     access-token-expiration-minutes: 120
     refresh-token-expiration-days: 30
 

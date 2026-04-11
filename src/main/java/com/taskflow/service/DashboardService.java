@@ -30,29 +30,28 @@ public class DashboardService {
         LocalDate today = LocalDate.now();
         List<TaskStatus> doneOrCancelled = List.of(TaskStatus.DONE, TaskStatus.CANCELLED);
 
-        // Task counts
-        long myTasks       = taskRepository.countByAssignee(currentUser);
-        long completedTasks = taskRepository.countByAssigneeAndStatus(currentUser, TaskStatus.DONE);
-        long pendingTasks  = taskRepository.countByAssigneeAndStatus(currentUser, TaskStatus.TODO)
-                           + taskRepository.countByAssigneeAndStatus(currentUser, TaskStatus.IN_PROGRESS);
-        long overdueTasks  = taskRepository.countByAssigneeAndDueDateBefore(currentUser, today);
+        // ── Task counts (ALL visible: personal + assigned + team) ────────────
+        long totalTasks     = taskRepository.countAllVisibleTasks(currentUser);
+        long completedTasks = taskRepository.countAllVisibleTasksByStatus(currentUser, TaskStatus.DONE);
+        long pendingTasks   = taskRepository.countAllVisibleTasksByStatus(currentUser, TaskStatus.TODO)
+                + taskRepository.countAllVisibleTasksByStatus(currentUser, TaskStatus.IN_PROGRESS);
+        long overdueTasks   = taskRepository.countAllVisibleOverdueTasks(currentUser, today, doneOrCancelled);
 
-        // Project count (accessible)
+        // myTasks = tasks personally assigned to me
+        long myTasks = taskRepository.countByAssignee(currentUser);
+
+        // ── Project count (accessible via team membership) ───────────────────
         long totalProjects = projectRepository
                 .findAllAccessibleByUser(currentUser, PageRequest.of(0, 1))
                 .getTotalElements();
 
-        // Total tasks created or assigned
-        long totalTasks = taskRepository.countByAssignee(currentUser)
-                        + taskRepository.countByCreatorAndProjectIsNull(currentUser);
-
-        // Team members (across all teams user belongs to)
+        // ── Team members (across all teams user belongs to) ──────────────────
         List<Team> myTeams = teamRepository.findAllByMember(currentUser);
         long totalTeamMembers = myTeams.stream()
                 .mapToLong(teamMemberRepository::countByTeam)
                 .sum();
 
-        // Upcoming due dates (next 7 days)
+        // ── Upcoming due dates (next 7 days, ALL visible tasks) ──────────────
         List<UpcomingTaskResponse> upcomingDueDates = taskRepository
                 .findUpcomingTasks(currentUser, today, today.plusDays(7), TaskStatus.DONE)
                 .stream()
@@ -61,11 +60,11 @@ public class DashboardService {
                         t.getTitle(),
                         t.getDueDate(),
                         t.getPriority(),
-                        t.getProject() != null ? t.getProject().getName() : null
+                        t.getProject() != null ? t.getProject().getName() : "Personal"
                 ))
                 .toList();
 
-        // Recent activities (last 5 assigned tasks as activity proxy)
+        // ── Recent activities (last 5 assigned tasks) ────────────────────────
         List<ActivityResponse> recentActivities = taskRepository
                 .findByAssignee(currentUser, PageRequest.of(0, 5))
                 .getContent()
@@ -77,7 +76,7 @@ public class DashboardService {
                 ))
                 .toList();
 
-        // Project progress summary
+        // ── Project progress summary ─────────────────────────────────────────
         List<ProjectProgressResponse> projectProgressSummary = projectRepository
                 .findAllAccessibleByUser(currentUser, PageRequest.of(0, 10))
                 .getContent()
