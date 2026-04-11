@@ -2,7 +2,10 @@ package com.taskflow.service.impl;
 
 import com.taskflow.domain.Project;
 import com.taskflow.domain.Team;
+import com.taskflow.domain.TeamMember;
 import com.taskflow.domain.User;
+import com.taskflow.domain.enums.NotificationType;
+import com.taskflow.domain.enums.TaskStatus;
 import com.taskflow.dto.request.ProjectRequests.*;
 import com.taskflow.dto.response.Responses.*;
 import com.taskflow.exception.AccessDeniedException;
@@ -11,14 +14,16 @@ import com.taskflow.repository.ProjectRepository;
 import com.taskflow.repository.TaskRepository;
 import com.taskflow.repository.TeamMemberRepository;
 import com.taskflow.repository.TeamRepository;
+import com.taskflow.service.EmailService;
+import com.taskflow.service.NotificationService;
 import com.taskflow.service.ProjectService;
-import com.taskflow.domain.enums.TaskStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 import static com.taskflow.service.impl.AuthServiceImpl.mapUserResponse;
@@ -31,6 +36,8 @@ public class ProjectServiceImpl implements ProjectService {
     private final TeamRepository teamRepository;
     private final TeamMemberRepository teamMemberRepository;
     private final TaskRepository taskRepository;
+    private final NotificationService notificationService;
+    private final EmailService emailService;
 
     @Override
     @Transactional
@@ -86,13 +93,16 @@ public class ProjectServiceImpl implements ProjectService {
     public ProjectResponse updateProject(UUID projectId, UpdateProjectRequest request, User currentUser) {
         Project project = findProjectAndVerifyAccess(projectId, currentUser);
 
-        if (request.name() != null) project.setName(request.name());
+        if (request.name() != null)        project.setName(request.name());
         if (request.description() != null) project.setDescription(request.description());
-        if (request.startDate() != null) project.setStartDate(request.startDate());
-        if (request.dueDate() != null) project.setDueDate(request.dueDate());
-        if (request.color() != null) project.setColor(request.color());
+        if (request.startDate() != null)   project.setStartDate(request.startDate());
+        if (request.dueDate() != null)     project.setDueDate(request.dueDate());
+        if (request.color() != null)       project.setColor(request.color());
 
         project = projectRepository.save(project);
+
+        notifyTeamMembersProjectUpdated(project, currentUser);
+
         return buildProjectResponse(project);
     }
 
@@ -103,7 +113,31 @@ public class ProjectServiceImpl implements ProjectService {
         projectRepository.delete(project);
     }
 
-    // ─── Helpers ────────────────────────────────────────────────────────────
+    private void notifyTeamMembersProjectUpdated(Project project, User updater) {
+        List<TeamMember> members = teamMemberRepository.findByTeam(project.getTeam());
+
+        for (TeamMember member : members) {
+            User recipient = member.getUser();
+
+            // Don't notify the person who made the change
+            if (recipient.getId().equals(updater.getId())) continue;
+
+            notificationService.send(
+                    recipient,
+                    NotificationType.PROJECT_UPDATED,
+                    updater.getFullName() + " updated project: " + project.getName(),
+                    project.getId(),
+                    "PROJECT"
+            );
+
+            emailService.sendProjectUpdatedEmail(
+                    recipient.getEmail(),
+                    recipient.getFullName(),
+                    updater.getFullName(),
+                    project.getName()
+            );
+        }
+    }
 
     private Project findProjectAndVerifyAccess(UUID projectId, User user) {
         Project project = projectRepository.findById(projectId)
@@ -116,7 +150,7 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     private ProjectResponse buildProjectResponse(Project project) {
-        long total = taskRepository.countByProject(project);
+        long total     = taskRepository.countByProject(project);
         long completed = taskRepository.countByProjectAndStatus(project, TaskStatus.DONE);
         return mapProjectResponse(project, total, completed);
     }

@@ -61,7 +61,7 @@ public class CommentService {
 
     @Transactional
     public CommentResponse updateComment(UUID taskId, UUID commentId,
-                                          UpdateCommentRequest request, User currentUser) {
+                                         UpdateCommentRequest request, User currentUser) {
         findTaskAndVerifyAccess(taskId, currentUser);
 
         Comment comment = commentRepository.findById(commentId)
@@ -118,25 +118,48 @@ public class CommentService {
     }
 
     private void notifyTaskParticipants(Task task, User commenter, Comment comment) {
+        String preview = comment.getContent().length() > 100
+                ? comment.getContent().substring(0, 100) + "..."
+                : comment.getContent();
+        String message = commenter.getFullName() + " commented on task: " + task.getTitle();
+
         // Notify assignee if not the commenter
         if (task.getAssignee() != null && !task.getAssignee().getId().equals(commenter.getId())) {
             notificationService.send(
                     task.getAssignee(),
                     NotificationType.COMMENT_ADDED,
-                    commenter.getFullName() + " commented on task: " + task.getTitle(),
+                    message,
                     comment.getId(),
                     "COMMENT"
             );
+            // ✅ NEW: Send email to assignee
+            emailService.sendCommentAddedEmail(
+                    task.getAssignee().getEmail(),
+                    task.getAssignee().getFullName(),
+                    commenter.getFullName(),
+                    task.getTitle(),
+                    preview
+            );
         }
+
         // Notify task creator if not the commenter and not already notified as assignee
         if (!task.getCreator().getId().equals(commenter.getId()) &&
-                (task.getAssignee() == null || !task.getCreator().getId().equals(task.getAssignee().getId()))) {
+                (task.getAssignee() == null ||
+                        !task.getCreator().getId().equals(task.getAssignee().getId()))) {
             notificationService.send(
                     task.getCreator(),
                     NotificationType.COMMENT_ADDED,
-                    commenter.getFullName() + " commented on task: " + task.getTitle(),
+                    message,
                     comment.getId(),
                     "COMMENT"
+            );
+            // ✅ NEW: Send email to creator
+            emailService.sendCommentAddedEmail(
+                    task.getCreator().getEmail(),
+                    task.getCreator().getFullName(),
+                    commenter.getFullName(),
+                    task.getTitle(),
+                    preview
             );
         }
     }
@@ -145,7 +168,7 @@ public class CommentService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
 
-        boolean isCreator = task.getCreator().getId().equals(user.getId());
+        boolean isCreator  = task.getCreator().getId().equals(user.getId());
         boolean isAssignee = task.getAssignee() != null && task.getAssignee().getId().equals(user.getId());
         boolean isProjectMember = task.getProject() != null &&
                 teamMemberRepository.existsByTeamAndUser(task.getProject().getTeam(), user);

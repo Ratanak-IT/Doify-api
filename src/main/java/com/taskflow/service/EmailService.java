@@ -15,7 +15,6 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-
     @Value("${app.frontend-url}")
     private String frontendUrl;
 
@@ -37,7 +36,6 @@ public class EmailService {
                 Best regards,
                 The TaskFlow Team
                 """, name, link);
-
         send(to, "Verify Your TaskFlow Account", body);
     }
 
@@ -56,7 +54,6 @@ public class EmailService {
                 Best regards,
                 The TaskFlow Team
                 """, name, link);
-
         send(to, "Reset Your TaskFlow Password", body);
     }
 
@@ -72,7 +69,6 @@ public class EmailService {
                 Best regards,
                 The TaskFlow Team
                 """, name);
-
         send(to, "New Login to Your TaskFlow Account", body);
     }
 
@@ -94,7 +90,6 @@ public class EmailService {
                 Best regards,
                 The TaskFlow Team
                 """, inviterName, teamName, role, link);
-
         send(to, "You've been invited to join " + teamName + " on TaskFlow", body);
     }
 
@@ -115,7 +110,6 @@ public class EmailService {
                 assignerName,
                 taskTitle,
                 projectName != null ? " in project " + projectName : "");
-
         send(to, "New Task Assigned: " + taskTitle, body);
     }
 
@@ -131,7 +125,6 @@ public class EmailService {
                 Best regards,
                 The TaskFlow Team
                 """, name, taskTitle, dueDate);
-
         send(to, "Task Due Tomorrow: " + taskTitle, body);
     }
 
@@ -150,8 +143,58 @@ public class EmailService {
                 Best regards,
                 The TaskFlow Team
                 """, name, commenterName, taskTitle, commentPreview);
-
         send(to, commenterName + " mentioned you in a comment", body);
+    }
+
+    @Async("taskExecutor")
+    public void sendCommentAddedEmail(String to, String recipientName, String commenterName,
+                                      String taskTitle, String commentPreview) {
+        String body = String.format("""
+                Hello %s,
+                                
+                %s commented on task "%s":
+                                
+                "%s"
+                                
+                Log in to TaskFlow to view and reply.
+                                
+                Best regards,
+                The TaskFlow Team
+                """, recipientName, commenterName, taskTitle, commentPreview);
+        send(to, commenterName + " commented on: " + taskTitle, body);
+    }
+
+    @Async("taskExecutor")
+    public void sendOverdueTaskEmail(String to, String name, String taskTitle, String dueDate) {
+        String body = String.format("""
+                Hello %s,
+                                
+                Your task "%s" was due on %s and has not been completed yet.
+                                
+                Please update the task status or reschedule it as soon as possible.
+                                
+                Log in to TaskFlow to manage your tasks.
+                                
+                Best regards,
+                The TaskFlow Team
+                """, name, taskTitle, dueDate);
+        send(to, "Overdue Task: " + taskTitle, body);
+    }
+
+    @Async("taskExecutor")
+    public void sendProjectUpdatedEmail(String to, String recipientName, String updaterName,
+                                        String projectName) {
+        String body = String.format("""
+                Hello %s,
+                                
+                %s made updates to the project "%s".
+                                
+                Log in to TaskFlow to see what changed.
+                                
+                Best regards,
+                The TaskFlow Team
+                """, recipientName, updaterName, projectName);
+        send(to, "Project Updated: " + projectName, body);
     }
 
     private void send(String to, String subject, String body) {
@@ -161,7 +204,6 @@ public class EmailService {
             message.setTo(to);
             message.setSubject(subject);
             message.setText(body);
-
             mailSender.send(message);
             log.info("Email sent to {} with subject: {}", to, subject);
         } catch (Exception e) {

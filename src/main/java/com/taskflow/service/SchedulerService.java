@@ -25,9 +25,6 @@ public class SchedulerService {
     private static final List<TaskStatus> TERMINAL_STATUSES = List.of(TaskStatus.DONE, TaskStatus.CANCELLED);
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("MMM dd, yyyy");
 
-    /**
-     * Runs every day at 8:00 AM — sends due-date reminders for tasks due tomorrow.
-     */
     @Scheduled(cron = "0 0 8 * * *")
     public void sendDueDateReminders() {
         LocalDate tomorrow = LocalDate.now().plusDays(1);
@@ -63,19 +60,27 @@ public class SchedulerService {
         LocalDate today = LocalDate.now();
         List<Task> overdueTasks = taskRepository.findAllOverdueTasks(today, TERMINAL_STATUSES);
 
-        // findOverdueTasks with null user won't work — we use a full scan approach
-        // In production you'd page through users; here we query all overdue tasks across all assignees
-        log.info("Processing overdue task notifications for {}", today);
+        log.info("Processing overdue task notifications for {} tasks on {}", overdueTasks.size(), today);
 
-        // Re-use the task data: group by assignee
         overdueTasks.stream()
                 .filter(t -> t.getAssignee() != null)
-                .forEach(task -> notificationService.send(
-                        task.getAssignee(),
-                        NotificationType.OVERDUE_TASK,
-                        "Task \"" + task.getTitle() + "\" is overdue (was due " + task.getDueDate().format(DATE_FORMAT) + ")",
-                        task.getId(),
-                        "TASK"
-                ));
+                .forEach(task -> {
+                    String dueDateStr = task.getDueDate().format(DATE_FORMAT);
+
+                    notificationService.send(
+                            task.getAssignee(),
+                            NotificationType.OVERDUE_TASK,
+                            "Task \"" + task.getTitle() + "\" is overdue (was due " + dueDateStr + ")",
+                            task.getId(),
+                            "TASK"
+                    );
+
+                    emailService.sendOverdueTaskEmail(
+                            task.getAssignee().getEmail(),
+                            task.getAssignee().getFullName(),
+                            task.getTitle(),
+                            dueDateStr
+                    );
+                });
     }
 }
