@@ -32,24 +32,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
 
-        final String authHeader = request.getHeader("Authorization");
-        log.info("Authorization header: {}", authHeader);
+        String jwt = null;
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            log.warn("No Bearer token found");
+        final String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            jwt = authHeader.substring(7);
+        }
+
+        if (jwt == null) {
+            String queryToken = request.getParameter("token");
+            if (queryToken != null && !queryToken.isBlank()) {
+                jwt = queryToken;
+            }
+        }
+
+        if (jwt == null) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        final String jwt = authHeader.substring(7);
         try {
             final String userEmail = jwtService.extractUsername(jwt);
-            log.info("Extracted email from token: {}", userEmail);
-
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
-                log.info("Loaded user: {}", userDetails.getUsername());
-
                 if (jwtService.isTokenValid(jwt, userDetails)) {
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(
@@ -57,14 +62,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             );
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                    log.info("JWT authentication success for {}", userEmail);
-                } else {
-                    log.warn("JWT token is invalid");
                 }
             }
-        } catch (Exception e) {
-            log.warn("JWT authentication failed: {}", e.getMessage(), e);
-        }
+        } catch (Exception ignored) {}
 
         filterChain.doFilter(request, response);
     }

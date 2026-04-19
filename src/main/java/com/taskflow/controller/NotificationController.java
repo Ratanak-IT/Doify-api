@@ -8,8 +8,10 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.Map;
 import java.util.UUID;
@@ -22,6 +24,12 @@ import java.util.UUID;
 public class NotificationController {
 
     private final NotificationService notificationService;
+
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Operation(summary = "SSE stream for real-time notifications (pass JWT as ?token=)")
+    public SseEmitter stream(@AuthenticationPrincipal User currentUser) {
+        return notificationService.createEmitter(currentUser);
+    }
 
     @GetMapping
     @Operation(summary = "Get all notifications (paginated, newest first)")

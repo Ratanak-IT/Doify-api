@@ -80,4 +80,22 @@ public class AuthController {
     public ApiResponse<Void> googleCallback(@RequestParam String code) {
         return ApiResponse.success("OAuth2 flow is handled via Spring Security redirect");
     }
+
+    @PostMapping("/social-login")
+    @Operation(summary = "Social login — check email, create user if new, return token")
+    public ApiResponse<AuthResponse> socialLogin(
+            @RequestBody SocialLoginRequest request) {
+        return ApiResponse.success(
+                "Social login successful",
+                authService.socialLogin(request)
+        );
+    }
+
+    @PostMapping("/social-register")
+    @Operation(summary = "Sync OAuth user from better-auth")
+    public ApiResponse<Void> socialRegister(
+            @RequestBody SocialRegisterRequest request) {
+        authService.socialRegister(request);
+        return ApiResponse.success("User synced");
+    }
 }

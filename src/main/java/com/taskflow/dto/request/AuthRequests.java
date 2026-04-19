@@ -59,4 +59,18 @@ public class AuthRequests {
             @NotBlank(message = "Refresh token is required")
             String refreshToken
     ) {}
+
+    public record SocialLoginRequest(
+            String email,
+            String name,
+            String avatar,
+            String provider
+    ) {}
+
+    public record SocialRegisterRequest(
+            String id,
+            String name,
+            String email,
+            String avatar
+    ) {}
 }

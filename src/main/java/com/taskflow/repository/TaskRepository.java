@@ -19,7 +19,7 @@ import java.util.UUID;
 @Repository
 public interface TaskRepository extends JpaRepository<Task, UUID> {
 
-    // Personal tasks (no project)
+    // Personal tasks
     Page<Task> findByCreatorAndProjectIsNull(User creator, Pageable pageable);
 
     // Project tasks
@@ -65,8 +65,6 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
             Pageable pageable
     );
 
-    // ── Dashboard queries ────────────────────────────────────────────────────
-
     long countByCreatorAndProjectIsNull(User creator);
 
     long countByAssignee(User assignee);
@@ -75,12 +73,6 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
 
     long countByAssigneeAndDueDateBefore(User assignee, LocalDate date);
 
-    /**
-     * Upcoming due dates — ALL tasks visible to the user:
-     *   1. Personal tasks (creator = user, no project)
-     *   2. Project tasks assigned to user
-     *   3. Any task in a project whose team the user is a member of
-     */
     @Query("""
             SELECT DISTINCT t FROM Task t
             LEFT JOIN t.project p
@@ -103,12 +95,6 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
             @Param("excludeStatus") TaskStatus excludeStatus
     );
 
-    /**
-     * Overdue tasks — ALL tasks visible to the user:
-     *   1. Personal tasks (creator = user, no project)
-     *   2. Project tasks assigned to user
-     *   3. Any task in a project whose team the user is a member of
-     */
     @Query("""
             SELECT DISTINCT t FROM Task t
             LEFT JOIN t.project p
@@ -128,9 +114,6 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
             @Param("excludeStatuses") List<TaskStatus> excludeStatuses
     );
 
-    /**
-     * Total count of ALL tasks visible to the user (personal + project + team)
-     */
     @Query("""
             SELECT COUNT(DISTINCT t) FROM Task t
             LEFT JOIN t.project p
@@ -144,9 +127,6 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
             """)
     long countAllVisibleTasks(@Param("user") User user);
 
-    /**
-     * Count ALL visible tasks by status (completed, pending, etc.)
-     */
     @Query("""
             SELECT COUNT(DISTINCT t) FROM Task t
             LEFT JOIN t.project p
@@ -164,9 +144,6 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
             @Param("status") TaskStatus status
     );
 
-    /**
-     * Count ALL visible overdue tasks
-     */
     @Query("""
             SELECT COUNT(DISTINCT t) FROM Task t
             LEFT JOIN t.project p
@@ -186,27 +163,29 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
             @Param("excludeStatuses") List<TaskStatus> excludeStatuses
     );
 
-    // Scheduler: all overdue tasks across all assignees
     @Query("""
-            SELECT t FROM Task t
-            WHERE t.dueDate < :today
-              AND t.status NOT IN :excludeStatuses
-              AND t.assignee IS NOT NULL
-            """)
-    List<Task> findAllOverdueTasks(
-            @Param("today") LocalDate today,
+        SELECT t FROM Task t
+        LEFT JOIN FETCH t.assignee
+        LEFT JOIN FETCH t.creator
+        WHERE t.dueDate = :tomorrow
+          AND t.status NOT IN :excludeStatuses
+          AND (t.assignee IS NOT NULL OR t.project IS NULL)
+        """)
+    List<Task> findTasksDueTomorrow(
+            @Param("tomorrow") LocalDate tomorrow,
             @Param("excludeStatuses") List<TaskStatus> excludeStatuses
     );
 
-    // Scheduler: find tasks due tomorrow for email reminder
     @Query("""
-            SELECT t FROM Task t
-            WHERE t.dueDate = :tomorrow
-              AND t.status NOT IN :excludeStatuses
-              AND t.assignee IS NOT NULL
-            """)
-    List<Task> findTasksDueTomorrow(
-            @Param("tomorrow") LocalDate tomorrow,
+        SELECT t FROM Task t
+        LEFT JOIN FETCH t.assignee
+        LEFT JOIN FETCH t.creator
+        WHERE t.dueDate < :today
+          AND t.status NOT IN :excludeStatuses
+          AND (t.assignee IS NOT NULL OR t.project IS NULL)
+        """)
+    List<Task> findAllOverdueTasks(
+            @Param("today") LocalDate today,
             @Param("excludeStatuses") List<TaskStatus> excludeStatuses
     );
 

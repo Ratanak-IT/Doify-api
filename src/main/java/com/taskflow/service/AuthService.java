@@ -12,4 +12,6 @@ public interface AuthService {
     void resetPassword(ResetPasswordRequest request);
     void verifyEmail(String token);
     AuthResponse googleSignIn(String code);
+    AuthResponse socialLogin(SocialLoginRequest request);
+    void socialRegister(SocialRegisterRequest request);
 }

@@ -6,9 +6,9 @@ spring:
     name: taskflow-api
 
   datasource:
-    url: jdbc:postgresql://localhost:1681/task_db
-    username: postgres
-    password: "0116"
+    url: jdbc:postgresql://dpg-d76g420ule4c73ethd20-a.singapore-postgres.render.com:5432/doifydb
+    username: mydoify
+    password: XZHfWc9ic1zVCJdQBN1oAff4fVPGJiRC
     driver-class-name: org.postgresql.Driver
 
   jpa:

@@ -219,4 +219,74 @@ public class AuthServiceImpl implements AuthService {
                 user.getCreatedAt()
         );
     }
+
+
+    @Override
+    @Transactional
+    public AuthResponse socialLogin(SocialLoginRequest request) {
+
+        // check email — បើមានហើយ login, បើអត់ register ថ្មី
+        User user = userRepository.findByEmail(request.email())
+                .orElseGet(() -> {
+                    // generate unique username ពី email prefix
+                    String base = request.email().split("@")[0]
+                            .replaceAll("[^a-zA-Z0-9_]", "");
+                    String username = base;
+                    int i = 1;
+                    while (userRepository.existsByUsername(username)) {
+                        username = base + i++;
+                    }
+
+                    return userRepository.save(
+                            User.builder()
+                                    .fullName(request.name() != null ? request.name() : base)
+                                    .username(username)
+                                    .email(request.email())
+                                    .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                                    .profilePhoto(request.avatar())
+                                    .isVerified(true)   // OAuth user verified ហើយ
+                                    .build()
+                    );
+                });
+
+        // update profilePhoto បើ user មានហើយ តែ photo នៅ null
+        if (request.avatar() != null && user.getProfilePhoto() == null) {
+            user.setProfilePhoto(request.avatar());
+            userRepository.save(user);
+        }
+
+        String accessToken  = jwtService.generateAccessToken(user);
+        String refreshToken = saveRefreshToken(user);
+
+        return buildAuthResponse(accessToken, refreshToken, user, null);
+    }
+
+    @Override
+    @Transactional
+    public void socialRegister(SocialRegisterRequest request) {
+        // better-auth ហៅ endpoint នេះ — sync user តែប៉ុណ្ណោះ
+        // មិន throw error បើ email មានហើយ
+        if (request.email() == null) return;
+
+        if (!userRepository.existsByEmail(request.email())) {
+            String base = request.email().split("@")[0]
+                    .replaceAll("[^a-zA-Z0-9_]", "");
+            String username = base;
+            int i = 1;
+            while (userRepository.existsByUsername(username)) {
+                username = base + i++;
+            }
+
+            userRepository.save(
+                    User.builder()
+                            .fullName(request.name() != null ? request.name() : base)
+                            .username(username)
+                            .email(request.email())
+                            .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                            .profilePhoto(request.avatar())
+                            .isVerified(true)
+                            .build()
+            );
+        }
+    }
 }
