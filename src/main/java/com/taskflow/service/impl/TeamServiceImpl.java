@@ -122,6 +122,12 @@ public class TeamServiceImpl implements TeamService {
                 currentUser.getFullName() + " accepted your invitation",
                 invitation.getId()
         );
+        emailService.sendInvitationAcceptedEmail(
+                invitation.getInviter().getEmail(),
+                invitation.getInviter().getFullName(),
+                currentUser.getFullName(),
+                invitation.getTeam().getName()
+        );
     }
 
     @Override
@@ -221,6 +227,12 @@ public class TeamServiceImpl implements TeamService {
                 team.getId(),
                 "TEAM"
         );
+        emailService.sendInvitationAcceptedEmail(
+                invitation.getInviter().getEmail(),
+                invitation.getInviter().getFullName(),
+                currentUser.getFullName(),
+                team.getName()
+        );
     }
 
     @Override
@@ -263,6 +275,19 @@ public class TeamServiceImpl implements TeamService {
 
         member.setRole(request.role());
         teamMemberRepository.save(member);
+
+        notificationService.createNotification(
+                member.getUser(),
+                NotificationType.TEAM_INVITATION,
+                "Your role in team " + team.getName() + " has been updated to " + request.role().name(),
+                team.getId()
+        );
+        emailService.sendRoleUpdatedEmail(
+                member.getUser().getEmail(),
+                member.getUser().getFullName(),
+                team.getName(),
+                request.role().name()
+        );
     }
 
     @Override
@@ -282,6 +307,18 @@ public class TeamServiceImpl implements TeamService {
         }
 
         teamMemberRepository.delete(member);
+
+        notificationService.createNotification(
+                targetUser,
+                NotificationType.TEAM_INVITATION,
+                "You have been removed from team " + team.getName(),
+                team.getId()
+        );
+        emailService.sendMemberRemovedEmail(
+                targetUser.getEmail(),
+                targetUser.getFullName(),
+                team.getName()
+        );
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────

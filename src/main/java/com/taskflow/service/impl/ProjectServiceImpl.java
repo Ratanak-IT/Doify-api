@@ -60,6 +60,9 @@ public class ProjectServiceImpl implements ProjectService {
                 .build();
 
         project = projectRepository.save(project);
+
+        notifyTeamMembersProjectCreated(project, currentUser);
+
         return mapProjectResponse(project, 0, 0);
     }
 
@@ -111,6 +114,29 @@ public class ProjectServiceImpl implements ProjectService {
     public void deleteProject(UUID projectId, User currentUser) {
         Project project = findProjectAndVerifyAccess(projectId, currentUser);
         projectRepository.delete(project);
+    }
+
+    private void notifyTeamMembersProjectCreated(Project project, User creator) {
+        List<TeamMember> members = teamMemberRepository.findByTeam(project.getTeam());
+        for (TeamMember member : members) {
+            User recipient = member.getUser();
+            if (recipient.getId().equals(creator.getId())) continue;
+
+            notificationService.send(
+                    recipient,
+                    NotificationType.PROJECT_UPDATED,
+                    creator.getFullName() + " created a new project: " + project.getName(),
+                    project.getId(),
+                    "PROJECT"
+            );
+            emailService.sendProjectCreatedEmail(
+                    recipient.getEmail(),
+                    recipient.getFullName(),
+                    creator.getFullName(),
+                    project.getName(),
+                    project.getTeam().getName()
+            );
+        }
     }
 
     private void notifyTeamMembersProjectUpdated(Project project, User updater) {

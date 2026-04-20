@@ -182,6 +182,69 @@ public class EmailService {
     }
 
     @Async("taskExecutor")
+    public void sendInvitationAcceptedEmail(String to, String inviterName,
+                                            String accepterName, String teamName) {
+        String body = String.format("""
+                Hello %s,
+                                
+                Great news! %s has accepted your invitation to join the team "%s" on TaskFlow.
+                                
+                Log in to TaskFlow to see your updated team.
+                                
+                Best regards,
+                The TaskFlow Team
+                """, inviterName, accepterName, teamName);
+        send(to, accepterName + " accepted your invitation to join " + teamName, body);
+    }
+
+    @Async("taskExecutor")
+    public void sendMemberRemovedEmail(String to, String recipientName, String teamName) {
+        String body = String.format("""
+                Hello %s,
+                                
+                You have been removed from the team "%s" on TaskFlow.
+                                
+                If you think this was a mistake, please contact your team owner.
+                                
+                Best regards,
+                The TaskFlow Team
+                """, recipientName, teamName);
+        send(to, "You have been removed from " + teamName, body);
+    }
+
+    @Async("taskExecutor")
+    public void sendRoleUpdatedEmail(String to, String recipientName,
+                                     String teamName, String newRole) {
+        String body = String.format("""
+                Hello %s,
+                                
+                Your role in the team "%s" on TaskFlow has been updated to: %s.
+                                
+                Log in to TaskFlow to see your updated permissions.
+                                
+                Best regards,
+                The TaskFlow Team
+                """, recipientName, teamName, newRole);
+        send(to, "Your role in " + teamName + " has been updated", body);
+    }
+
+    @Async("taskExecutor")
+    public void sendProjectCreatedEmail(String to, String recipientName,
+                                        String creatorName, String projectName, String teamName) {
+        String body = String.format("""
+                Hello %s,
+                                
+                %s created a new project "%s" in your team "%s" on TaskFlow.
+                                
+                Log in to TaskFlow to view the project details.
+                                
+                Best regards,
+                The TaskFlow Team
+                """, recipientName, creatorName, projectName, teamName);
+        send(to, "New project created: " + projectName, body);
+    }
+
+    @Async("taskExecutor")
     public void sendProjectUpdatedEmail(String to, String recipientName, String updaterName,
                                         String projectName) {
         String body = String.format("""
