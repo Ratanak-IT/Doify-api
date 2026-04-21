@@ -21,7 +21,7 @@ public class ProjectRequests {
             @Size(max = 7, message = "Color must be a valid hex code e.g. #FF5733")
             String color,
 
-            @NotNull(message = "Team ID is required")
+
             UUID teamId
     ) {}
 

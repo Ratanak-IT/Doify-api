@@ -38,7 +38,7 @@ public class Project {
     private String color;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "team_id", nullable = false)
+    @JoinColumn(name = "team_id", nullable = true)
     private Team team;
 
     @ManyToOne(fetch = FetchType.LAZY)

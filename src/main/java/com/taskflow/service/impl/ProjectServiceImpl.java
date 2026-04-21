@@ -42,11 +42,15 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional
     public ProjectResponse createProject(CreateProjectRequest request, User currentUser) {
-        Team team = teamRepository.findById(request.teamId())
-                .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
+        Team team = null;
 
-        if (!teamMemberRepository.existsByTeamAndUser(team, currentUser)) {
-            throw new AccessDeniedException("You are not a member of this team");
+        if (request.teamId() != null) {
+            team = teamRepository.findById(request.teamId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
+
+            if (!teamMemberRepository.existsByTeamAndUser(team, currentUser)) {
+                throw new AccessDeniedException("You are not a member of this team");
+            }
         }
 
         Project project = Project.builder()
@@ -55,13 +59,15 @@ public class ProjectServiceImpl implements ProjectService {
                 .startDate(request.startDate())
                 .dueDate(request.dueDate())
                 .color(request.color())
-                .team(team)
+                .team(team)       // null = personal project
                 .creator(currentUser)
                 .build();
 
         project = projectRepository.save(project);
 
-        notifyTeamMembersProjectCreated(project, currentUser);
+        if (team != null) {
+            notifyTeamMembersProjectCreated(project, currentUser);
+        }
 
         return mapProjectResponse(project, 0, 0);
     }
@@ -190,8 +196,8 @@ public class ProjectServiceImpl implements ProjectService {
                 project.getStartDate(),
                 project.getDueDate(),
                 project.getColor(),
-                project.getTeam().getId(),
-                project.getTeam().getName(),
+                project.getTeam() != null ? project.getTeam().getId() : null,
+                project.getTeam() != null ? project.getTeam().getName() : null,
                 mapUserResponse(project.getCreator()),
                 total,
                 completed,
