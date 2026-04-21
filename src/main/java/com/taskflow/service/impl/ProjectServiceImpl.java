@@ -47,7 +47,6 @@ public class ProjectServiceImpl implements ProjectService {
         if (request.teamId() != null) {
             team = teamRepository.findById(request.teamId())
                     .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
-
             if (!teamMemberRepository.existsByTeamAndUser(team, currentUser)) {
                 throw new AccessDeniedException("You are not a member of this team");
             }
@@ -59,7 +58,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .startDate(request.startDate())
                 .dueDate(request.dueDate())
                 .color(request.color())
-                .team(team)       // null = personal project
+                .team(team)
                 .creator(currentUser)
                 .build();
 
