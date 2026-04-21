@@ -22,11 +22,12 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     Page<Project> findByCreator(User creator, Pageable pageable);
 
     @Query("""
-            SELECT p FROM Project p
-            JOIN p.team t
-            JOIN t.members m
-            WHERE m.user = :user
-            """)
+    SELECT p FROM Project p
+    LEFT JOIN p.team t
+    LEFT JOIN t.members m
+    WHERE p.creator = :user
+       OR m.user = :user
+    """)
     Page<Project> findAllAccessibleByUser(User user, Pageable pageable);
 
     long countByTeam(Team team);
