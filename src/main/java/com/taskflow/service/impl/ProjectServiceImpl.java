@@ -185,7 +185,7 @@ public class ProjectServiceImpl implements ProjectService {
         long completed = taskRepository.countByProjectAndStatus(project, TaskStatus.DONE);
         return mapProjectResponse(project, total, completed);
     }
-
+   // update
     private ProjectResponse mapProjectResponse(Project project, long total, long completed) {
         int progress = total == 0 ? 0 : (int) ((completed * 100) / total);
         return new ProjectResponse(
