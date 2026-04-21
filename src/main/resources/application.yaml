@@ -7,9 +7,9 @@ spring:
     name: taskflow-api
 
   datasource:
-    url: jdbc:postgresql://dpg-d76g420ule4c73ethd20-a.singapore-postgres.render.com:5432/doifydb
-    username: mydoify
-    password: XZHfWc9ic1zVCJdQBN1oAff4fVPGJiRC
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -30,8 +30,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ratanakcoding.it@gmail.com
-    password: "pgtybbmknkhrylwl"
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -46,7 +46,7 @@ spring:
 
 app:
   jwt:
-    secret: XhHN4zPEEsjDgx1R9NYQJ7e3wRaSSgpOqTQ8fSwYJM5Jma2NwjjppxIc5jy0cdGrqcW779J0JDA4lTe4v7Df7w==
+    secret: ${JWT_SECRET}
     access-token-expiration-minutes: 120
     refresh-token-expiration-days: 30
 
