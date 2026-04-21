@@ -173,10 +173,16 @@ public class ProjectServiceImpl implements ProjectService {
     private Project findProjectAndVerifyAccess(UUID projectId, User user) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
-
+        if (project.getTeam() == null) {
+            if (!project.getCreator().getId().equals(user.getId())) {
+                throw new AccessDeniedException("You do not have access to this project");
+            }
+            return project;
+        }
         if (!teamMemberRepository.existsByTeamAndUser(project.getTeam(), user)) {
             throw new AccessDeniedException("You do not have access to this project");
         }
+
         return project;
     }
 
